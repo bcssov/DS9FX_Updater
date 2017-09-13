@@ -156,7 +156,7 @@ namespace DS9FX_Updater
         /// <param name="status">The status.</param>
         private void Generator_StatusChanged(int fileIndex, int totalFiles, string fileName, ProcessingStatus status)
         {
-            AddToListBoxAndFocus(string.Format("Generating signature of: {0}.", fileName, fileIndex, totalFiles));
+            AddToListBoxAndFocus(string.Format("Generating signature of: {0}.", fileName));
             SetProgressBar(fileIndex, totalFiles);
         }
 
@@ -266,15 +266,15 @@ namespace DS9FX_Updater
         {
             if (status == ProcessingStatus.Deleting)
             {
-                AddToListBoxAndFocus(string.Format("Removing: {0}.", fileName, fileIndex, totalFiles));
+                AddToListBoxAndFocus(string.Format("Removing: {0}.", fileName));
             }
             else if (status == ProcessingStatus.Skipping)
             {
-                AddToListBoxAndFocus(string.Format("Skipping: {0}.", fileName, fileIndex, totalFiles));
+                AddToListBoxAndFocus(string.Format("Skipping: {0}.", fileName));
             }
             else
             {
-                AddToListBoxAndFocus(string.Format("Downloading: {0}.", fileName, fileIndex, totalFiles));
+                AddToListBoxAndFocus(string.Format("Downloading: {0}.", fileName));
             }
             SetProgressBar(fileIndex, totalFiles);
         }
