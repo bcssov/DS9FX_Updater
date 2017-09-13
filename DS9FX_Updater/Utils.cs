@@ -43,5 +43,6 @@ namespace DS9FX_Updater
         }
 
         #endregion Methods
+
     }
 }

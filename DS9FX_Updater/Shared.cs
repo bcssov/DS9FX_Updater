@@ -20,6 +20,15 @@ namespace DS9FX_Updater
     /// </summary>
     public class Shared
     {
+        #region Fields
+
+        /// <summary>
+        /// The update index name
+        /// </summary>
+        public const string UpdateIndexName = "updater_info.json";
+
+        #endregion Fields
+
         #region Delegates
 
         /// <summary>
@@ -28,8 +37,60 @@ namespace DS9FX_Updater
         /// <param name="fileIndex">Index of the file.</param>
         /// <param name="totalFiles">The total files.</param>
         /// <param name="fileName">Name of the file.</param>
-        public delegate void StatusDelegate(int fileIndex, int totalFiles, string fileName);
+        /// <param name="status">The status.</param>
+        public delegate void StatusDelegate(int fileIndex, int totalFiles, string fileName, ProcessingStatus status);
 
         #endregion Delegates
+
+        #region Enums
+
+        /// <summary>
+        /// Enum Modes
+        /// </summary>
+        public enum Mode
+        {
+            /// <summary>
+            /// The generator
+            /// </summary>
+            Generator,
+
+            /// <summary>
+            /// The dev
+            /// </summary>
+            Developer,
+
+            /// <summary>
+            /// The tester
+            /// </summary>
+            Tester
+        }
+
+        /// <summary>
+        /// Enum ProcessingStatus
+        /// </summary>
+        public enum ProcessingStatus
+        {
+            /// <summary>
+            /// The calculating
+            /// </summary>
+            Calculating,
+
+            /// <summary>
+            /// The downloading
+            /// </summary>
+            Downloading,
+
+            /// <summary>
+            /// The deleting
+            /// </summary>
+            Deleting,
+
+            /// <summary>
+            /// The skipping
+            /// </summary>
+            Skipping
+        }
+
+        #endregion Enums
     }
 }

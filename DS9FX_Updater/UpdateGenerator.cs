@@ -4,16 +4,19 @@
 // Created          : 09-12-2017
 //
 // Last Modified By : Mario
-// Last Modified On : 09-12-2017
+// Last Modified On : 09-13-2017
 // ***********************************************************************
 // <copyright file="UpdateGenerator.cs" company="">
 //     Copyright ©  2017
 // </copyright>
 // <summary></summary>
 // ***********************************************************************
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Windows.Forms;
 using static DS9FX_Updater.Shared;
 
 namespace DS9FX_Updater
@@ -28,7 +31,12 @@ namespace DS9FX_Updater
         /// <summary>
         /// The directories
         /// </summary>
-        private readonly string[] directories = new string[] { "data", "sfx" };
+        private readonly string[] directories = new string[] { "\\data\\", "\\scripts\\", "\\sfx\\" };
+
+        /// <summary>
+        /// The processed
+        /// </summary>
+        private int processed = 0;
 
         #endregion Fields
 
@@ -40,7 +48,7 @@ namespace DS9FX_Updater
         /// <param name="files">The files.</param>
         public UpdateGenerator(List<string> files)
         {
-            this.Files = files;
+            Files = files;
         }
 
         #endregion Constructors
@@ -69,27 +77,28 @@ namespace DS9FX_Updater
         /// <summary>
         /// Generates this instance.
         /// </summary>
-        /// <returns>List&lt;UpdateInfo&gt;.</returns>
-        public List<UpdateInfo> Generate()
+        public void Generate()
         {
             List<UpdateInfo> updateInfo = new List<UpdateInfo>();
-            if (this.Files != null && this.Files.Count > 0)
+            if (Files?.Count > 0)
             {
-                var files = this.Files.Where(p => directories.Any(x => p.ToLowerInvariant().Contains(x)));
+                var files = Files.Where(p => directories.Any(x => p.ToLowerInvariant().Contains(x)));
                 var totalCount = files.Count();
-                int index = 0;
-                foreach (var item in files)
+
+                foreach (var file in files)
                 {
-                    index++;
-                    this.StatusChanged?.Invoke(index, totalCount, item);
+                    var checksum = Utils.GetChecksum(file);
+                    processed++;
+                    StatusChanged?.Invoke(processed, totalCount, file, ProcessingStatus.Calculating);
                     updateInfo.Add(new UpdateInfo()
                     {
-                        Checksum = Utils.GetChecksum(item),
-                        Path = GetCleanPath(item)
+                        Checksum = checksum,
+                        Path = GetCleanPath(file)
                     });
                 }
             }
-            return updateInfo;
+            string json = JsonConvert.SerializeObject(updateInfo, Formatting.Indented);
+            File.WriteAllText(Path.Combine(Application.StartupPath, Shared.UpdateIndexName), json);
         }
 
         /// <summary>
@@ -99,12 +108,12 @@ namespace DS9FX_Updater
         /// <returns>System.String.</returns>
         private string GetCleanPath(string path)
         {
-            foreach (var item in this.directories)
+            foreach (var directory in directories)
             {
-                if (path.ToLowerInvariant().Contains(item))
+                if (path.ToLowerInvariant().Contains(directory))
                 {
-                    var index = path.ToLowerInvariant().IndexOf(item);
-                    return path.Substring(index);
+                    var index = path.ToLowerInvariant().IndexOf(directory);
+                    return path.Substring(index + 1);
                 }
             }
             return string.Empty;

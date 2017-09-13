@@ -8,13 +8,19 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Developer|Any CPU = Developer|Any CPU
+		Generator|Any CPU = Generator|Any CPU
+		Tester|Any CPU = Tester|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{C752B537-670B-4DFA-8627-509BA20CA8CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C752B537-670B-4DFA-8627-509BA20CA8CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C752B537-670B-4DFA-8627-509BA20CA8CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C752B537-670B-4DFA-8627-509BA20CA8CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C752B537-670B-4DFA-8627-509BA20CA8CC}.Developer|Any CPU.ActiveCfg = Developer|Any CPU
+		{C752B537-670B-4DFA-8627-509BA20CA8CC}.Developer|Any CPU.Build.0 = Developer|Any CPU
+		{C752B537-670B-4DFA-8627-509BA20CA8CC}.Generator|Any CPU.ActiveCfg = Generator|Any CPU
+		{C752B537-670B-4DFA-8627-509BA20CA8CC}.Generator|Any CPU.Build.0 = Generator|Any CPU
+		{C752B537-670B-4DFA-8627-509BA20CA8CC}.Tester|Any CPU.ActiveCfg = Tester|Any CPU
+		{C752B537-670B-4DFA-8627-509BA20CA8CC}.Tester|Any CPU.Build.0 = Tester|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

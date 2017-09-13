@@ -25,7 +25,7 @@ namespace DS9FX_Updater.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://www.bc-central.net/")]
         public string BaseUpdateUrl {
             get {
                 return ((string)(this["BaseUpdateUrl"]));
@@ -34,10 +34,10 @@ namespace DS9FX_Updater.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool DevMode {
+        [global::System.Configuration.DefaultSettingValueAttribute("Tester")]
+        public global::DS9FX_Updater.Shared.Mode Mode {
             get {
-                return ((bool)(this["DevMode"]));
+                return ((global::DS9FX_Updater.Shared.Mode)(this["Mode"]));
             }
         }
     }

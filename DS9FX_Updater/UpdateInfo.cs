@@ -37,6 +37,13 @@ namespace DS9FX_Updater
         [JsonProperty("path")]
         public string Path { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether [should delete].
+        /// </summary>
+        /// <value><c>true</c> if [should delete]; otherwise, <c>false</c>.</value>
+        [JsonIgnore]
+        public bool ShouldDelete { get; set; }
+
         #endregion Properties
     }
 }
