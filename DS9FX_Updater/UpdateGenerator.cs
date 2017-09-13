@@ -31,7 +31,7 @@ namespace DS9FX_Updater
         /// <summary>
         /// The directories
         /// </summary>
-        private readonly string[] directories = new string[] { "\\data\\", "\\scripts\\", "\\sfx\\" };
+        private static readonly string[] directories = new string[] { "\\data\\", "\\scripts\\", "\\sfx\\" };
 
         /// <summary>
         /// The processed
@@ -82,14 +82,14 @@ namespace DS9FX_Updater
             List<UpdateInfo> updateInfo = new List<UpdateInfo>();
             if (Files?.Count > 0)
             {
-                var files = Files.Where(p => directories.Any(x => p.ToLowerInvariant().Contains(x)));
+                var files = Files.Where(p => directories.Any(x => p.ToLowerInvariant().Contains(x)) && !Path.GetExtension(p).ToLowerInvariant().Equals(".txt"));
                 var totalCount = files.Count();
 
                 foreach (var file in files)
                 {
                     var checksum = Utils.GetChecksum(file);
                     processed++;
-                    StatusChanged?.Invoke(processed, totalCount, file, ProcessingStatus.Calculating);
+                    StatusChanged?.Invoke(processed, totalCount, file, ProcessingStatus.Calculated);
                     updateInfo.Add(new UpdateInfo()
                     {
                         Checksum = checksum,

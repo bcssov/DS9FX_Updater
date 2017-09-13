@@ -4,7 +4,7 @@
 // Created          : 09-12-2017
 //
 // Last Modified By : Mario
-// Last Modified On : 09-12-2017
+// Last Modified On : 09-13-2017
 // ***********************************************************************
 // <copyright file="Shared.cs" company="">
 //     Copyright ©  2017
@@ -21,6 +21,11 @@ namespace DS9FX_Updater
     public class Shared
     {
         #region Fields
+
+        /// <summary>
+        /// The maximum connections
+        /// </summary>
+        public const int MaxConnections = 2;
 
         /// <summary>
         /// The update index name
@@ -71,24 +76,24 @@ namespace DS9FX_Updater
         public enum ProcessingStatus
         {
             /// <summary>
-            /// The calculating
+            /// The calculated
             /// </summary>
-            Calculating,
+            Calculated,
 
             /// <summary>
-            /// The downloading
+            /// The downloaded
             /// </summary>
-            Downloading,
+            Downloaded,
 
             /// <summary>
-            /// The deleting
+            /// The deleted
             /// </summary>
-            Deleting,
+            Deleted,
 
             /// <summary>
-            /// The skipping
+            /// The skipped
             /// </summary>
-            Skipping
+            Skipped
         }
 
         #endregion Enums

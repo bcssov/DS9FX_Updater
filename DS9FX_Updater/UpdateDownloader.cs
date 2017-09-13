@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using static DS9FX_Updater.Shared;
@@ -26,24 +27,30 @@ namespace DS9FX_Updater
     /// <summary>
     /// Class UpdateDownloader.
     /// </summary>
-    public class UpdateDownloader
+    /// <seealso cref="System.IDisposable" />
+    public class UpdateDownloader : IDisposable
     {
         #region Fields
 
         /// <summary>
         /// The core updates URL
         /// </summary>
-        private readonly string coreUpdatesUrl = string.Format("{0}/sov/ds9fx/", Properties.Settings.Default.BaseUpdateUrl);
+        private static readonly string coreUpdatesUrl = string.Format("{0}/sov/ds9fx/", Properties.Settings.Default.BaseUpdateUrl);
 
         /// <summary>
         /// The index URL
         /// </summary>
-        private readonly string indexUrl = string.Format("{0}/sov/ds9fx/{1}", Properties.Settings.Default.BaseUpdateUrl, Shared.UpdateIndexName);
+        private static readonly string indexUrl = string.Format("{0}/sov/ds9fx/{1}", Properties.Settings.Default.BaseUpdateUrl, Shared.UpdateIndexName);
 
         /// <summary>
         /// The local index URL
         /// </summary>
-        private readonly string localIndexUrl = Path.Combine(Application.StartupPath, Shared.UpdateIndexName);
+        private static readonly string localIndexUrl = Path.Combine(Application.StartupPath, Shared.UpdateIndexName);
+
+        /// <summary>
+        /// The client
+        /// </summary>
+        private HttpClient client;
 
         /// <summary>
         /// The processed
@@ -61,6 +68,9 @@ namespace DS9FX_Updater
         public UpdateDownloader(bool ignoreScripts)
         {
             IgnoreScripts = ignoreScripts;
+            client = new HttpClient();
+            client.DefaultRequestHeaders.Clear();
+            client.DefaultRequestHeaders.TryAddWithoutValidation("USER_AGENT", "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.79 Safari/537.36");
         }
 
         #endregion Constructors
@@ -99,6 +109,17 @@ namespace DS9FX_Updater
         #region Methods
 
         /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            if (client != null)
+            {
+                client.Dispose();
+            }
+        }
+
+        /// <summary>
         /// load updates as an asynchronous operation.
         /// </summary>
         /// <returns>Task.</returns>
@@ -106,7 +127,7 @@ namespace DS9FX_Updater
         {
             string json = await DownloadUpdatesAsync();
             Updates = JsonConvert.DeserializeObject<List<UpdateInfo>>(json);
-            if (File.Exists(this.localIndexUrl))
+            if (File.Exists(localIndexUrl))
             {
                 ExistingUpdates = JsonConvert.DeserializeObject<List<UpdateInfo>>(File.ReadAllText(localIndexUrl));
             }
@@ -120,41 +141,56 @@ namespace DS9FX_Updater
         {
             var diffs = GetDiffs();
             var totalCount = diffs.Count;
-            foreach (var diff in diffs)
+            using (var semaphore = new SemaphoreSlim(Shared.MaxConnections))
             {
-                processed++;
-                if (diff.ShouldDelete)
+                var tasks = diffs.Select(async diff =>
                 {
-                    StatusChanged?.Invoke(processed, totalCount, diff.Path, ProcessingStatus.Deleting);
-                    if (File.Exists(GetUpdatePath(diff.Path)))
-                    {
-                        File.Delete(GetUpdatePath(diff.Path));
-                    }
-                }
-                else
-                {
-                    if (File.Exists(GetUpdatePath(diff.Path)))
-                    {
-                        var checksum = Utils.GetChecksum(GetUpdatePath(diff.Path));
-                        if (diff.Checksum != checksum)
-                        {
-                            StatusChanged?.Invoke(processed, totalCount, diff.Path, ProcessingStatus.Downloading);
-                            await SaveUpdateAsync(diff.Path);
+                    await semaphore.WaitAsync();
+                    try
+                    {                        
+                        if (diff.ShouldDelete)
+                        {                            
+                            if (File.Exists(GetUpdatePath(diff.Path)))
+                            {
+                                File.Delete(GetUpdatePath(diff.Path));
+                            }
+                            processed++;
+                            StatusChanged?.Invoke(processed, totalCount, diff.Path, ProcessingStatus.Deleted);
                         }
                         else
                         {
-                            StatusChanged?.Invoke(processed, totalCount, diff.Path, ProcessingStatus.Skipping);
+                            if (File.Exists(GetUpdatePath(diff.Path)))
+                            {
+                                var checksum = Utils.GetChecksum(GetUpdatePath(diff.Path));
+                                if (diff.Checksum != checksum)
+                                {                                    
+                                    await SaveUpdateAsync(diff.Path);
+                                    processed++;
+                                    StatusChanged?.Invoke(processed, totalCount, diff.Path, ProcessingStatus.Downloaded);
+                                }
+                                else
+                                {
+                                    processed++;
+                                    StatusChanged?.Invoke(processed, totalCount, diff.Path, ProcessingStatus.Skipped);
+                                }
+                            }
+                            else
+                            {                                
+                                await SaveUpdateAsync(diff.Path);
+                                processed++;
+                                StatusChanged?.Invoke(processed, totalCount, diff.Path, ProcessingStatus.Downloaded);
+                            }
                         }
                     }
-                    else
+                    finally
                     {
-                        StatusChanged?.Invoke(processed, totalCount, diff.Path, ProcessingStatus.Downloading);
-                        await SaveUpdateAsync(diff.Path);
+                        semaphore.Release();
                     }
-                }
-            }
-            string json = JsonConvert.SerializeObject(Updates, Formatting.Indented);
-            File.WriteAllText(Path.Combine(Application.StartupPath, Shared.UpdateIndexName), json);
+                });
+                await Task.WhenAll(tasks);
+                string json = JsonConvert.SerializeObject(Updates, Formatting.Indented);
+                File.WriteAllText(Path.Combine(Application.StartupPath, Shared.UpdateIndexName), json);
+            }            
         }
 
         /// <summary>
@@ -163,12 +199,7 @@ namespace DS9FX_Updater
         /// <returns>Task&lt;System.String&gt;.</returns>
         private async Task<string> DownloadUpdatesAsync()
         {
-            using (HttpClient client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Clear();
-                client.DefaultRequestHeaders.TryAddWithoutValidation("USER_AGENT", "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.79 Safari/537.36");
-                return await client.GetStringAsync(indexUrl);
-            }
+            return await client.GetStringAsync(indexUrl);
         }
 
         /// <summary>
@@ -243,6 +274,11 @@ namespace DS9FX_Updater
         /// <returns>System.String.</returns>
         private string GetUpdateUrl(string path)
         {
+            if (path.ToLowerInvariant().EndsWith(".py"))
+            {
+                // NOTE: Server refuses to serve py files, which is to be expected. Also by changing extension prevent it from being treated as a txt file....
+                return string.Format("{0}{1}", coreUpdatesUrl, path.Replace("\\", "/").Replace(".py", ".ds9fx"));
+            }
             return string.Format("{0}{1}", coreUpdatesUrl, path.Replace("\\", "/"));
         }
 
@@ -257,18 +293,13 @@ namespace DS9FX_Updater
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(GetUpdatePath(path)));
             }
-            using (HttpClient client = new HttpClient())
+            using (var response = await client.GetAsync(GetUpdateUrl(path), HttpCompletionOption.ResponseHeadersRead))
             {
-                client.DefaultRequestHeaders.Clear();
-                client.DefaultRequestHeaders.TryAddWithoutValidation("USER_AGENT", "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.79 Safari/537.36");
-                using (var response = await client.GetAsync(GetUpdateUrl(path), HttpCompletionOption.ResponseHeadersRead))
+                using (var downloadStream = await response.Content.ReadAsStreamAsync())
                 {
-                    using (var downloadStream = await response.Content.ReadAsStreamAsync())
+                    using (var localStream = File.Open(GetUpdatePath(path), FileMode.Create))
                     {
-                        using (var localStream = File.Open(GetUpdatePath(path), FileMode.Create))
-                        {
-                            await downloadStream.CopyToAsync(localStream);
-                        }
+                        await downloadStream.CopyToAsync(localStream);
                     }
                 }
             }

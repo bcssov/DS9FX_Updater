@@ -51,6 +51,7 @@ namespace DS9FX_Updater
             {
                 listBox1.Items.Add(text);
                 listBox1.TopIndex = listBox1.Items.Count - 1;
+                Logger.Log(text);
             }
             else
             {
@@ -58,6 +59,7 @@ namespace DS9FX_Updater
                 {
                     listBox1.Items.Add(text);
                     listBox1.TopIndex = listBox1.Items.Count - 1;
+                    Logger.Log(text);
                 }));
             }
         }
@@ -156,7 +158,7 @@ namespace DS9FX_Updater
         /// <param name="status">The status.</param>
         private void Generator_StatusChanged(int fileIndex, int totalFiles, string fileName, ProcessingStatus status)
         {
-            AddToListBoxAndFocus(string.Format("Generating signature of: {0}.", fileName));
+            AddToListBoxAndFocus(string.Format("Generated signature of: {0}.", fileName));
             SetProgressBar(fileIndex, totalFiles);
         }
 
@@ -264,17 +266,17 @@ namespace DS9FX_Updater
         /// <param name="status">The status.</param>
         private void Updater_StatusChanged(int fileIndex, int totalFiles, string fileName, ProcessingStatus status)
         {
-            if (status == ProcessingStatus.Deleting)
+            if (status == ProcessingStatus.Deleted)
             {
-                AddToListBoxAndFocus(string.Format("Removing: {0}.", fileName));
+                AddToListBoxAndFocus(string.Format("Removed: {0}.", fileName));
             }
-            else if (status == ProcessingStatus.Skipping)
+            else if (status == ProcessingStatus.Skipped)
             {
-                AddToListBoxAndFocus(string.Format("Skipping: {0}.", fileName));
+                AddToListBoxAndFocus(string.Format("Skipped: {0}.", fileName));
             }
             else
             {
-                AddToListBoxAndFocus(string.Format("Downloading: {0}.", fileName));
+                AddToListBoxAndFocus(string.Format("Downloaded: {0}.", fileName));
             }
             SetProgressBar(fileIndex, totalFiles);
         }
