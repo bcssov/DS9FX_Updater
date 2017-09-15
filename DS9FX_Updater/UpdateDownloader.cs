@@ -4,7 +4,7 @@
 // Created          : 09-12-2017
 //
 // Last Modified By : Mario
-// Last Modified On : 09-13-2017
+// Last Modified On : 09-15-2017
 // ***********************************************************************
 // <copyright file="UpdateDownloader.cs" company="">
 //     Copyright ©  2017
@@ -40,12 +40,12 @@ namespace DS9FX_Updater
         /// <summary>
         /// The index URL
         /// </summary>
-        private static readonly string indexUrl = string.Format("{0}/sov/ds9fx/{1}", Properties.Settings.Default.BaseUpdateUrl, Shared.UpdateIndexName);
+        private static readonly string indexUrl = string.Format("{0}/sov/ds9fx/{1}", Properties.Settings.Default.BaseUpdateUrl, UpdateIndexName);
 
         /// <summary>
         /// The local index URL
         /// </summary>
-        private static readonly string localIndexUrl = Path.Combine(Application.StartupPath, Shared.UpdateIndexName);
+        private static readonly string localIndexUrl = Path.Combine(Application.StartupPath, UpdateIndexName);
 
         /// <summary>
         /// The client
@@ -147,15 +147,14 @@ namespace DS9FX_Updater
                 {
                     await semaphore.WaitAsync();
                     try
-                    {                        
+                    {
                         if (diff.ShouldDelete)
-                        {                            
+                        {
                             if (File.Exists(GetUpdatePath(diff.Path)))
                             {
                                 File.Delete(GetUpdatePath(diff.Path));
                             }
-                            processed++;
-                            StatusChanged?.Invoke(processed, totalCount, diff.Path, ProcessingStatus.Deleted);
+                            OnStatusChanged(totalCount, diff.Path, ProcessingStatus.Deleted);
                         }
                         else
                         {
@@ -163,22 +162,19 @@ namespace DS9FX_Updater
                             {
                                 var checksum = Utils.GetChecksum(GetUpdatePath(diff.Path));
                                 if (diff.Checksum != checksum)
-                                {                                    
+                                {
                                     await SaveUpdateAsync(diff.Path);
-                                    processed++;
-                                    StatusChanged?.Invoke(processed, totalCount, diff.Path, ProcessingStatus.Downloaded);
+                                    OnStatusChanged(totalCount, diff.Path, ProcessingStatus.Downloaded);
                                 }
                                 else
                                 {
-                                    processed++;
-                                    StatusChanged?.Invoke(processed, totalCount, diff.Path, ProcessingStatus.Skipped);
+                                    OnStatusChanged(totalCount, diff.Path, ProcessingStatus.Skipped);
                                 }
                             }
                             else
-                            {                                
+                            {
                                 await SaveUpdateAsync(diff.Path);
-                                processed++;
-                                StatusChanged?.Invoke(processed, totalCount, diff.Path, ProcessingStatus.Downloaded);
+                                OnStatusChanged(totalCount, diff.Path, ProcessingStatus.Downloaded);
                             }
                         }
                     }
@@ -190,7 +186,7 @@ namespace DS9FX_Updater
                 await Task.WhenAll(tasks);
                 string json = JsonConvert.SerializeObject(Updates, Formatting.Indented);
                 File.WriteAllText(Path.Combine(Application.StartupPath, Shared.UpdateIndexName), json);
-            }            
+            }
         }
 
         /// <summary>
@@ -280,6 +276,24 @@ namespace DS9FX_Updater
                 return string.Format("{0}{1}", coreUpdatesUrl, path.Replace("\\", "/").Replace(".py", ".ds9fx"));
             }
             return string.Format("{0}{1}", coreUpdatesUrl, path.Replace("\\", "/"));
+        }
+
+        /// <summary>
+        /// Called when [status changed].
+        /// </summary>
+        /// <param name="totalCount">The total count.</param>
+        /// <param name="path">The path.</param>
+        /// <param name="status">The status.</param>
+        private void OnStatusChanged(int totalCount, string path, ProcessingStatus status)
+        {
+            processed++;
+            StatusChanged?.Invoke(new StatusArgument()
+            {
+                FileIndex = processed,
+                FileName = path,
+                Status = status,
+                TotalFiles = totalCount
+            });
         }
 
         /// <summary>

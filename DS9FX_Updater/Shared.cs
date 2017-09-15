@@ -4,7 +4,7 @@
 // Created          : 09-12-2017
 //
 // Last Modified By : Mario
-// Last Modified On : 09-13-2017
+// Last Modified On : 09-15-2017
 // ***********************************************************************
 // <copyright file="Shared.cs" company="">
 //     Copyright ©  2017
@@ -39,11 +39,8 @@ namespace DS9FX_Updater
         /// <summary>
         /// Delegate Status.
         /// </summary>
-        /// <param name="fileIndex">Index of the file.</param>
-        /// <param name="totalFiles">The total files.</param>
-        /// <param name="fileName">Name of the file.</param>
-        /// <param name="status">The status.</param>
-        public delegate void StatusDelegate(int fileIndex, int totalFiles, string fileName, ProcessingStatus status);
+        /// <param name="e">The e.</param>
+        public delegate void StatusDelegate(StatusArgument e);
 
         #endregion Delegates
 
@@ -97,5 +94,44 @@ namespace DS9FX_Updater
         }
 
         #endregion Enums
+
+        #region Classes
+
+        /// <summary>
+        /// Class StatusArgument.
+        /// </summary>
+        /// <seealso cref="System.EventArgs" />
+        public class StatusArgument : EventArgs
+        {
+            #region Properties
+
+            /// <summary>
+            /// Gets or sets the index of the file.
+            /// </summary>
+            /// <value>The index of the file.</value>
+            public int FileIndex { get; set; }
+
+            /// <summary>
+            /// Gets or sets the name of the file.
+            /// </summary>
+            /// <value>The name of the file.</value>
+            public string FileName { get; set; }
+
+            /// <summary>
+            /// Gets or sets the status.
+            /// </summary>
+            /// <value>The status.</value>
+            public ProcessingStatus Status { get; set; }
+
+            /// <summary>
+            /// Gets or sets the total files.
+            /// </summary>
+            /// <value>The total files.</value>
+            public int TotalFiles { get; set; }
+
+            #endregion Properties
+        }
+
+        #endregion Classes
     }
 }

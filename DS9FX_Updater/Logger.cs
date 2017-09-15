@@ -4,30 +4,29 @@
 // Created          : 09-13-2017
 //
 // Last Modified By : Mario
-// Last Modified On : 09-13-2017
+// Last Modified On : 09-15-2017
 // ***********************************************************************
 // <copyright file="Logger.cs" company="">
 //     Copyright ©  2017
 // </copyright>
 // <summary></summary>
 // ***********************************************************************
+using NLog;
 using System;
-using System.IO;
-using System.Windows.Forms;
 
 namespace DS9FX_Updater
 {
     /// <summary>
     /// Class Logger.
     /// </summary>
-    public static class Logger
+    public class Logger
     {
         #region Fields
 
         /// <summary>
-        /// The location
+        /// The log
         /// </summary>
-        private static readonly string location = Path.Combine(Application.StartupPath, "UpdaterLogs");
+        private static NLog.Logger log = LogManager.GetCurrentClassLogger();
 
         #endregion Fields
 
@@ -39,20 +38,22 @@ namespace DS9FX_Updater
         /// <param name="message">The message.</param>
         public static void Log(string message)
         {
-            if (!Directory.Exists(location))
+            if (!string.IsNullOrEmpty(message))
             {
-                Directory.CreateDirectory(location);
+                log.Info(message);
             }
-            File.AppendAllText(GetLogName(), string.Format("{0}: {1}{2}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), message, Environment.NewLine));
         }
 
         /// <summary>
-        /// Gets the name of the log.
+        /// Logs the specified ex.
         /// </summary>
-        /// <returns>System.String.</returns>
-        private static string GetLogName()
+        /// <param name="ex">The ex.</param>
+        public static void Log(Exception ex)
         {
-            return Path.Combine(location, DateTime.Now.ToString("yyyy-MM-dd") + ".log");
+            if (ex != null)
+            {
+                log.Error(ex);
+            }
         }
 
         #endregion Methods

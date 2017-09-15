@@ -89,7 +89,13 @@ namespace DS9FX_Updater
                 {
                     var checksum = Utils.GetChecksum(file);
                     processed++;
-                    StatusChanged?.Invoke(processed, totalCount, file, ProcessingStatus.Calculated);
+                    StatusChanged?.Invoke(new StatusArgument()
+                    {
+                        FileIndex = processed,
+                        FileName = file,
+                        Status = ProcessingStatus.Calculated,
+                        TotalFiles = totalCount
+                    });
                     updateInfo.Add(new UpdateInfo()
                     {
                         Checksum = checksum,

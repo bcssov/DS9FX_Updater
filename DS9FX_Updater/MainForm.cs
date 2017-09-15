@@ -4,7 +4,7 @@
 // Created          : 09-12-2017
 //
 // Last Modified By : Mario
-// Last Modified On : 09-12-2017
+// Last Modified On : 09-15-2017
 // ***********************************************************************
 // <copyright file="MainForm.cs" company="">
 //     Copyright ©  2017
@@ -85,7 +85,7 @@ namespace DS9FX_Updater
                 default:
                     if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
                     {
-                        Task.Factory.StartNew(() => GenerateSignaturesAsync(folderBrowserDialog1.SelectedPath));
+                        Task.Factory.StartNew(() => GenerateSignatures(folderBrowserDialog1.SelectedPath));
                     }
                     break;
             }
@@ -121,9 +121,9 @@ namespace DS9FX_Updater
             var updater = new UpdateDownloader(ignoreScripts);
             AddToListBoxAndFocus("Fetching update signatures");
             await updater.LoadUpdatesAsync();
-            updater.StatusChanged += Updater_StatusChanged;
+            updater.StatusChanged += StatusChanged;
             await updater.SyncAsync();
-            updater.StatusChanged -= Updater_StatusChanged;
+            updater.StatusChanged -= StatusChanged;
             SetStatusLabelVisibility(true);
             SetButtonStatus(true);
         }
@@ -131,8 +131,9 @@ namespace DS9FX_Updater
         /// <summary>
         /// generate signatures as an asynchronous operation.
         /// </summary>
+        /// <param name="directory">The directory.</param>
         /// <returns>Task.</returns>
-        private void GenerateSignaturesAsync(string directory)
+        private void GenerateSignatures(string directory)
         {
             var files = Directory.GetFiles(directory, "*", SearchOption.AllDirectories);
             if (files?.Count() > 0)
@@ -140,26 +141,13 @@ namespace DS9FX_Updater
                 SetButtonStatus(false);
                 ClearListbox();
                 var generator = new UpdateGenerator(files.ToList());
-                generator.StatusChanged += Generator_StatusChanged;
+                generator.StatusChanged += StatusChanged;
                 generator.Generate();
-                generator.StatusChanged -= Generator_StatusChanged;
+                generator.StatusChanged -= StatusChanged;
                 AddToListBoxAndFocus("Saved updater info to " + Shared.UpdateIndexName + ".");
                 SetStatusLabelVisibility(true);
                 SetButtonStatus(true);
             }
-        }
-
-        /// <summary>
-        /// Generators the status changed.
-        /// </summary>
-        /// <param name="fileIndex">Index of the file.</param>
-        /// <param name="totalFiles">The total files.</param>
-        /// <param name="fileName">Name of the file.</param>
-        /// <param name="status">The status.</param>
-        private void Generator_StatusChanged(int fileIndex, int totalFiles, string fileName, ProcessingStatus status)
-        {
-            AddToListBoxAndFocus(string.Format("Generated signature of: {0}.", fileName));
-            SetProgressBar(fileIndex, totalFiles);
         }
 
         /// <summary>
@@ -260,25 +248,28 @@ namespace DS9FX_Updater
         /// <summary>
         /// Updaters the status changed.
         /// </summary>
-        /// <param name="fileIndex">Index of the file.</param>
-        /// <param name="totalFiles">The total files.</param>
-        /// <param name="fileName">Name of the file.</param>
-        /// <param name="status">The status.</param>
-        private void Updater_StatusChanged(int fileIndex, int totalFiles, string fileName, ProcessingStatus status)
+        /// <param name="e">The e.</param>
+        private void StatusChanged(StatusArgument e)
         {
-            if (status == ProcessingStatus.Deleted)
+            switch (e.Status)
             {
-                AddToListBoxAndFocus(string.Format("Removed: {0}.", fileName));
+                case ProcessingStatus.Calculated:
+                    AddToListBoxAndFocus(string.Format("Generated signature of: {0}.", e.FileName));
+                    break;
+
+                case ProcessingStatus.Deleted:
+                    AddToListBoxAndFocus(string.Format("Removed: {0}.", e.FileName));
+                    break;
+
+                case ProcessingStatus.Skipped:
+                    AddToListBoxAndFocus(string.Format("Skipped: {0}.", e.FileName));
+                    break;
+
+                default:
+                    AddToListBoxAndFocus(string.Format("Downloaded: {0}.", e.FileName));
+                    break;
             }
-            else if (status == ProcessingStatus.Skipped)
-            {
-                AddToListBoxAndFocus(string.Format("Skipped: {0}.", fileName));
-            }
-            else
-            {
-                AddToListBoxAndFocus(string.Format("Downloaded: {0}.", fileName));
-            }
-            SetProgressBar(fileIndex, totalFiles);
+            SetProgressBar(e.FileIndex, e.TotalFiles);
         }
 
         #endregion Methods
