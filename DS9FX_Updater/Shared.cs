@@ -4,7 +4,7 @@
 // Created          : 09-12-2017
 //
 // Last Modified By : Mario
-// Last Modified On : 09-15-2017
+// Last Modified On : 09-21-2017
 // ***********************************************************************
 // <copyright file="Shared.cs" company="">
 //     Copyright ©  2017
@@ -25,7 +25,7 @@ namespace DS9FX_Updater
         /// <summary>
         /// The maximum connections
         /// </summary>
-        public const int MaxConnections = 2;
+        public const int MaxConnections = 3;
 
         /// <summary>
         /// The update index name
@@ -101,6 +101,7 @@ namespace DS9FX_Updater
         /// Class StatusArgument.
         /// </summary>
         /// <seealso cref="System.EventArgs" />
+        /// <seealso cref="System.EventArgs" />
         public class StatusArgument : EventArgs
         {
             #region Properties
@@ -116,6 +117,12 @@ namespace DS9FX_Updater
             /// </summary>
             /// <value>The name of the file.</value>
             public string FileName { get; set; }
+
+            /// <summary>
+            /// Gets or sets the size.
+            /// </summary>
+            /// <value>The size.</value>
+            public long Size { get; set; }
 
             /// <summary>
             /// Gets or sets the status.

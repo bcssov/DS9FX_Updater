@@ -4,7 +4,7 @@
 // Created          : 09-12-2017
 //
 // Last Modified By : Mario
-// Last Modified On : 09-15-2017
+// Last Modified On : 09-21-2017
 // ***********************************************************************
 // <copyright file="MainForm.cs" company="">
 //     Copyright ©  2017
@@ -26,6 +26,20 @@ namespace DS9FX_Updater
     /// <seealso cref="System.Windows.Forms.Form" />
     public partial class MainForm : Form
     {
+        #region Fields
+
+        /// <summary>
+        /// The downloaded size
+        /// </summary>
+        private long downloadedSize = 0;
+
+        /// <summary>
+        /// The total size
+        /// </summary>
+        private long totalSize = 0;
+
+        #endregion Fields
+
         #region Constructors
 
         /// <summary>
@@ -72,13 +86,16 @@ namespace DS9FX_Updater
         private void button1_Click(object sender, EventArgs e)
         {
             SetStatusLabelVisibility(false);
+            SetDownloadSizeLabelState(false, string.Empty);
+            downloadedSize = 0;
+            totalSize = 0;
             switch (Properties.Settings.Default.Mode)
             {
-                case Shared.Mode.Developer:
+                case Mode.Developer:
                     Task.Factory.StartNew(() => DownloadUpdatesAsync(true));
                     break;
 
-                case Shared.Mode.Tester:
+                case Mode.Tester:
                     Task.Factory.StartNew(() => DownloadUpdatesAsync(false));
                     break;
 
@@ -121,6 +138,8 @@ namespace DS9FX_Updater
             var updater = new UpdateDownloader(ignoreScripts);
             AddToListBoxAndFocus("Fetching update signatures");
             await updater.LoadUpdatesAsync();
+            totalSize = updater.GetUpdateSize();
+            SetDownloadSizeLabelState(true, GetUpdateSizeText());
             updater.StatusChanged += StatusChanged;
             await updater.SyncAsync();
             updater.StatusChanged -= StatusChanged;
@@ -151,19 +170,29 @@ namespace DS9FX_Updater
         }
 
         /// <summary>
+        /// Gets the update size text.
+        /// </summary>
+        /// <returns>System.String.</returns>
+        private string GetUpdateSizeText()
+        {
+            return string.Format("Processed: {0} / Total: {1}", Utils.SizeSuffix(downloadedSize, 2), Utils.SizeSuffix(totalSize, 2));
+        }
+
+        /// <summary>
         /// Initializes the visibility.
         /// </summary>
         private void InitVisibility()
         {
             SetStatusLabelVisibility(false);
+            SetDownloadSizeLabelState(false, string.Empty);
             Text = string.Format("{0}: {1}", Text, Properties.Settings.Default.Mode);
             switch (Properties.Settings.Default.Mode)
             {
-                case Shared.Mode.Developer:
+                case Mode.Developer:
                     button1.Text = "Download developer updates";
                     break;
 
-                case Shared.Mode.Tester:
+                case Mode.Tester:
                     button1.Text = "Download latest version";
                     break;
 
@@ -188,6 +217,28 @@ namespace DS9FX_Updater
                 BeginInvoke(new Action(() =>
                 {
                     button1.Enabled = enabled;
+                }));
+            }
+        }
+
+        /// <summary>
+        /// Sets the state of the download size label.
+        /// </summary>
+        /// <param name="visible">if set to <c>true</c> [visible].</param>
+        /// <param name="text">The text.</param>
+        private void SetDownloadSizeLabelState(bool visible, string text)
+        {
+            if (!InvokeRequired)
+            {
+                label2.Visible = visible;
+                label2.Text = text;
+            }
+            else
+            {
+                BeginInvoke(new Action(() =>
+                {
+                    label2.Visible = visible;
+                    label2.Text = text;
                 }));
             }
         }
@@ -251,22 +302,26 @@ namespace DS9FX_Updater
         /// <param name="e">The e.</param>
         private void StatusChanged(StatusArgument e)
         {
+            downloadedSize += e.Size;
             switch (e.Status)
             {
                 case ProcessingStatus.Calculated:
-                    AddToListBoxAndFocus(string.Format("Generated signature of: {0}.", e.FileName));
+                    AddToListBoxAndFocus(string.Format("Generated signature of: {0}. File size: {1}", e.FileName, Utils.SizeSuffix(e.Size, 2)));
                     break;
 
                 case ProcessingStatus.Deleted:
                     AddToListBoxAndFocus(string.Format("Removed: {0}.", e.FileName));
+                    SetDownloadSizeLabelState(true, GetUpdateSizeText());
                     break;
 
                 case ProcessingStatus.Skipped:
                     AddToListBoxAndFocus(string.Format("Skipped: {0}.", e.FileName));
+                    SetDownloadSizeLabelState(true, GetUpdateSizeText());
                     break;
 
                 default:
                     AddToListBoxAndFocus(string.Format("Downloaded: {0}.", e.FileName));
+                    SetDownloadSizeLabelState(true, GetUpdateSizeText());
                     break;
             }
             SetProgressBar(e.FileIndex, e.TotalFiles);

@@ -4,7 +4,7 @@
 // Created          : 09-12-2017
 //
 // Last Modified By : Mario
-// Last Modified On : 09-15-2017
+// Last Modified On : 09-21-2017
 // ***********************************************************************
 // <copyright file="UpdateDownloader.cs" company="">
 //     Copyright ©  2017
@@ -120,6 +120,20 @@ namespace DS9FX_Updater
         }
 
         /// <summary>
+        /// Gets the size of the update.
+        /// </summary>
+        /// <returns>System.Int64.</returns>
+        public long GetUpdateSize()
+        {
+            var diffs = GetDiffs();
+            if (diffs != null && diffs.Count > 0)
+            {
+                return diffs.Sum(s => s.Size.GetValueOrDefault());
+            }
+            return 0;
+        }
+
+        /// <summary>
         /// load updates as an asynchronous operation.
         /// </summary>
         /// <returns>Task.</returns>
@@ -141,7 +155,7 @@ namespace DS9FX_Updater
         {
             var diffs = GetDiffs();
             var totalCount = diffs.Count;
-            using (var semaphore = new SemaphoreSlim(Shared.MaxConnections))
+            using (var semaphore = new SemaphoreSlim(MaxConnections))
             {
                 var tasks = diffs.Select(async diff =>
                 {
@@ -154,7 +168,7 @@ namespace DS9FX_Updater
                             {
                                 File.Delete(GetUpdatePath(diff.Path));
                             }
-                            OnStatusChanged(totalCount, diff.Path, ProcessingStatus.Deleted);
+                            OnStatusChanged(totalCount, diff.Path, ProcessingStatus.Deleted, diff.Size.GetValueOrDefault());
                         }
                         else
                         {
@@ -164,17 +178,17 @@ namespace DS9FX_Updater
                                 if (diff.Checksum != checksum)
                                 {
                                     await SaveUpdateAsync(diff.Path);
-                                    OnStatusChanged(totalCount, diff.Path, ProcessingStatus.Downloaded);
+                                    OnStatusChanged(totalCount, diff.Path, ProcessingStatus.Downloaded, diff.Size.GetValueOrDefault());
                                 }
                                 else
                                 {
-                                    OnStatusChanged(totalCount, diff.Path, ProcessingStatus.Skipped);
+                                    OnStatusChanged(totalCount, diff.Path, ProcessingStatus.Skipped, diff.Size.GetValueOrDefault());
                                 }
                             }
                             else
                             {
                                 await SaveUpdateAsync(diff.Path);
-                                OnStatusChanged(totalCount, diff.Path, ProcessingStatus.Downloaded);
+                                OnStatusChanged(totalCount, diff.Path, ProcessingStatus.Downloaded, diff.Size.GetValueOrDefault());
                             }
                         }
                     }
@@ -225,7 +239,8 @@ namespace DS9FX_Updater
                             diffs.Add(new UpdateInfo()
                             {
                                 Checksum = update.Checksum,
-                                Path = update.Path
+                                Path = update.Path,
+                                Size = update.Size
                             });
                         }
                         existingUpdates.Remove(existingUpdate);
@@ -235,7 +250,8 @@ namespace DS9FX_Updater
                         diffs.Add(new UpdateInfo()
                         {
                             Checksum = update.Checksum,
-                            Path = update.Path
+                            Path = update.Path,
+                            Size = update.Size
                         });
                     }
                 }
@@ -275,6 +291,10 @@ namespace DS9FX_Updater
                 // NOTE: Server refuses to serve py files, which is to be expected. Also by changing extension prevent it from being treated as a txt file....
                 return string.Format("{0}{1}", coreUpdatesUrl, path.Replace("\\", "/").Replace(".py", ".ds9fx"));
             }
+            else if (path.ToLowerInvariant().EndsWith(".pyc"))
+            {
+                return string.Format("{0}{1}", coreUpdatesUrl, path.Replace("\\", "/").Replace(".pyc", ".ds9fxc"));
+            }
             return string.Format("{0}{1}", coreUpdatesUrl, path.Replace("\\", "/"));
         }
 
@@ -284,7 +304,8 @@ namespace DS9FX_Updater
         /// <param name="totalCount">The total count.</param>
         /// <param name="path">The path.</param>
         /// <param name="status">The status.</param>
-        private void OnStatusChanged(int totalCount, string path, ProcessingStatus status)
+        /// <param name="size">The size.</param>
+        private void OnStatusChanged(int totalCount, string path, ProcessingStatus status, long size)
         {
             processed++;
             StatusChanged?.Invoke(new StatusArgument()
@@ -292,7 +313,8 @@ namespace DS9FX_Updater
                 FileIndex = processed,
                 FileName = path,
                 Status = status,
-                TotalFiles = totalCount
+                TotalFiles = totalCount,
+                Size = size
             });
         }
 

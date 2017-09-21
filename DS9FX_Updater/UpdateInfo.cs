@@ -44,6 +44,13 @@ namespace DS9FX_Updater
         [JsonIgnore]
         public bool ShouldDelete { get; set; }
 
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>The size.</value>
+        [JsonProperty("size")]
+        public long? Size { get; set; }
+
         #endregion Properties
     }
 }

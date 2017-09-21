@@ -88,16 +88,19 @@ namespace DS9FX_Updater
                 foreach (var file in files)
                 {
                     var checksum = Utils.GetChecksum(file);
+                    var size = new FileInfo(file).Length;
                     processed++;
                     StatusChanged?.Invoke(new StatusArgument()
                     {
                         FileIndex = processed,
                         FileName = file,
                         Status = ProcessingStatus.Calculated,
-                        TotalFiles = totalCount
+                        TotalFiles = totalCount,
+                        Size = size
                     });
                     updateInfo.Add(new UpdateInfo()
                     {
+                        Size = size,
                         Checksum = checksum,
                         Path = GetCleanPath(file)
                     });
