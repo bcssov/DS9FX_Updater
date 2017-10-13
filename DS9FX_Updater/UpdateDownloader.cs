@@ -4,7 +4,7 @@
 // Created          : 09-12-2017
 //
 // Last Modified By : Mario
-// Last Modified On : 09-21-2017
+// Last Modified On : 10-14-2017
 // ***********************************************************************
 // <copyright file="UpdateDownloader.cs" company="">
 //     Copyright ©  2017
@@ -27,6 +27,7 @@ namespace DS9FX_Updater
     /// <summary>
     /// Class UpdateDownloader.
     /// </summary>
+    /// <seealso cref="System.IDisposable" />
     /// <seealso cref="System.IDisposable" />
     public class UpdateDownloader : IDisposable
     {
@@ -53,6 +54,11 @@ namespace DS9FX_Updater
         private HttpClient client;
 
         /// <summary>
+        /// The detector
+        /// </summary>
+        private KMDetector detector;
+
+        /// <summary>
         /// The processed
         /// </summary>
         private int processed = 0;
@@ -69,6 +75,7 @@ namespace DS9FX_Updater
         {
             IgnoreScripts = ignoreScripts;
             client = new HttpClient();
+            detector = new KMDetector();
             client.DefaultRequestHeaders.Clear();
             client.DefaultRequestHeaders.TryAddWithoutValidation("USER_AGENT", "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.79 Safari/537.36");
         }
@@ -218,15 +225,20 @@ namespace DS9FX_Updater
         /// <returns>List&lt;UpdateInfo&gt;.</returns>
         private List<UpdateInfo> GetDiffs()
         {
+            List<UpdateInfo> updates = Updates.ToList();
             if (ExistingUpdates != null)
             {
                 List<UpdateInfo> diffs = new List<UpdateInfo>();
-                List<UpdateInfo> updates = Updates.ToList();
                 List<UpdateInfo> existingUpdates = ExistingUpdates.ToList();
                 if (IgnoreScripts)
                 {
                     updates = Updates.Where(p => !p.Path.ToLowerInvariant().Contains("scripts\\")).ToList();
                     existingUpdates = ExistingUpdates.Where(p => !p.Path.ToLowerInvariant().Contains("scripts\\")).ToList();
+                }
+                if (detector.IsKM())
+                {
+                    updates = updates.Where(p => !detector.ExcludeFiles.Contains(p.Path.ToLowerInvariant())).ToList();
+                    existingUpdates = existingUpdates.Where(p => !detector.ExcludeFiles.Contains(p.Path.ToLowerInvariant())).ToList();
                 }
                 foreach (var update in updates)
                 {
@@ -266,7 +278,11 @@ namespace DS9FX_Updater
                 }
                 return diffs;
             }
-            return Updates;
+            if (detector.IsKM())
+            {
+                updates = updates.Where(p => !detector.ExcludeFiles.Contains(p.Path.ToLowerInvariant())).ToList();
+            }
+            return updates;
         }
 
         /// <summary>

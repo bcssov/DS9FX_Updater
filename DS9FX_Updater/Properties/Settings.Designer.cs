@@ -34,7 +34,7 @@ namespace DS9FX_Updater.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Generator")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Tester")]
         public global::DS9FX_Updater.Shared.Mode Mode {
             get {
                 return ((global::DS9FX_Updater.Shared.Mode)(this["Mode"]));

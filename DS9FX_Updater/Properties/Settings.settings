@@ -6,7 +6,7 @@
       <Value Profile="(Default)">http://www.bc-central.net/</Value>
     </Setting>
     <Setting Name="Mode" Type="DS9FX_Updater.Shared.Mode" Scope="Application">
-      <Value Profile="(Default)">Generator</Value>
+      <Value Profile="(Default)">Tester</Value>
     </Setting>
   </Settings>
 </SettingsFile>
